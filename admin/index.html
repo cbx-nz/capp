@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>School Canteen Admin Login</title>
+  <link rel="stylesheet" href="./assets/admin.css" />
+  <link rel="icon" href="../public/assets/images/icons/favicon.ico" />
+</head>
+<body class="admin-bg">
+  <div class="admin-container">
+    <h1 class="admin-title">School Admin Login</h1>
+    <form id="loginForm" autocomplete="off" class="admin-form">
+      <input id="userInput" class="admin-input" placeholder="Admin username" required />
+      <input id="schoolInput" class="admin-input" placeholder="School short name (e.g. hs)" required />
+      <input id="passwordInput" type="password" class="admin-input" placeholder="Password" required />
+      <button type="submit" class="admin-button">Login</button>
+      <div id="loginMsg" class="admin-msg"></div>
+    </form>
+    <!-- Inquiry Button -->
+    <button onclick="showInquiryModal()" style="margin-top:2em;width:100%;background:#376fd0;color:#fff;border:none;border-radius:7px;font-size:1.1em;padding:0.7em 0;box-shadow:0 2px 8px #0002;cursor:pointer;">&#9993; Contact Support</button>
+  </div>
+  <!-- Inquiry Modal -->
+  <div id="inquiryModal" style="display:none; position:fixed; z-index:1002; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.16); justify-content:center; align-items:center;">
+    <div style="background:#fff;max-width:350px;padding:1.5em 2em;border-radius:10px;box-shadow:0 2px 16px 3px #0001;position:relative;">
+      <button id="closeInquiryModal" style="position:absolute;top:0.5em;right:0.7em;font-size:1.4em;background:none;border:none;color:#888;cursor:pointer;">&times;</button>
+      <h3>Contact Support</h3>
+      <form id="inquiryForm">
+        <input name="to" type="email" value="support@schoolcanteen.com" style="width:100%;margin-bottom:0.7em;" readonly required />
+        <input name="subject" placeholder="Subject" required style="width:100%;margin-bottom:0.7em;" />
+        <textarea name="message" placeholder="Your message" required rows="4" style="width:100%;margin-bottom:0.7em;"></textarea>
+        <button type="submit" style="width:100%;background:#356fd0;color:#fff;border:none;border-radius:4px;font-size:1.1em;padding:0.5em 0;">Send</button>
+        <div id="inquirySuccessMsg" style="color:#378e36;font-weight:bold;margin-top:1em;display:none;text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+<script>
+document.getElementById("loginForm").onsubmit = async function(e) {
+  e.preventDefault();
+  const user = document.getElementById("userInput").value.trim();
+  const school = document.getElementById("schoolInput").value.trim();
+  const password = document.getElementById("passwordInput").value;
+  const res = await fetch("/admin/login", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({user, password, school})
+  });
+  if (res.ok) {
+    window.location = "/admin/dashboard.html";
+  } else {
+    const data = await res.json();
+    document.getElementById("loginMsg").textContent = data.error || "Login failed";
+  }
+};
+// Inquiry Modal logic
+function showInquiryModal() {
+  document.getElementById("inquiryForm").reset();
+  document.getElementById("inquirySuccessMsg").style.display = "none";
+  document.getElementById("inquiryModal").style.display = "flex";
+}
+document.getElementById("closeInquiryModal").onclick = () => {
+  document.getElementById("inquiryModal").style.display = "none";
+};
+window.onclick = function(evt) {
+  if(evt.target === document.getElementById("inquiryModal")) document.getElementById("inquiryModal").style.display = "none";
+};
+document.getElementById("inquiryForm").onsubmit = async function(e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+  const data = {
+    to: fd.get("to"),
+    subject: fd.get("subject"),
+    text: fd.get("message")
+  };
+  const res = await fetch("/admin/api/send-email", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  });
+  if(res.ok) {
+    document.getElementById("inquirySuccessMsg").textContent = "Email sent!";
+    document.getElementById("inquirySuccessMsg").style.display = "";
+    setTimeout(()=>{ document.getElementById("inquiryModal").style.display="none"; }, 1600);
+  } else {
+    document.getElementById("inquirySuccessMsg").textContent = "Failed to send. Please try again.";
+    document.getElementById("inquirySuccessMsg").style.display = "";
+  }
+};
+</script>
+</body>
+</html>

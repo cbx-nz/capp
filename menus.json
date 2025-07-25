@@ -1,0 +1,17 @@
+[
+  {
+    "name": "High School",
+    "school": "hs",
+    "menu": {
+      "apple": {
+        "description": "apple",
+        "image": "/public/hs/1753402225693-fast-food.png",
+        "category": "Mains",
+        "price": "45.00",
+        "onSale": true,
+        "salePrice": "2.50"
+      }
+    },
+    "specials": {}
+  }
+]

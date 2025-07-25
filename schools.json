@@ -1,0 +1,9 @@
+[
+  {
+    "name": "High School",
+    "school": "hs",
+    "user": "admin_hs",
+    "password": "process.env.HIGH_SCHOOL_PASS",
+    "publicLink": "public/hs/"
+  }
+]

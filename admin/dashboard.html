@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>School Canteen Admin Dashboard</title>
+  <link rel="stylesheet" href="./assets/admin.css" />
+  <link rel="icon" href="../public/assets/favicon.ico" />
+  <style>
+  /* Pre-orders slide-in panel styling */
+  #preOrdersPanel {
+    position: fixed;
+    top: 0; right: -480px;
+    width: 400px; height: 100vh;
+    background: #fff;
+    box-shadow: -3px 0 14px 1px #0002;
+    z-index: 1001;
+    transition: right 0.28s;
+    overflow-y: auto;
+    padding: 1.2em 1.5em 1.2em 1.5em;
+    border-left: 1.5px solid #f0f0f0;
+  }
+  #preOrdersPanel.open { right: 0; }
+  #preOrdersPanel h2 { margin-top: 0; margin-bottom: .7em; }
+  #preOrdersOverlay {
+    display: none;
+    position: fixed; z-index: 1000; inset: 0;
+    background: rgba(0,0,0,0.13);
+  }
+  #preOrdersOverlay.open { display: block; }
+  .preorder-entry {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 1em;
+    padding-bottom: .6em;
+  }
+  .preorder-entry:last-child { border-bottom: none; }
+  .preorder-entry .preorder-meta {
+    font-size: .92em;
+    color: #777;
+    margin-top: .27em;
+  }
+  .preorder-entry .preorder-note {
+    font-size: .97em;
+    color: #376fd0;
+    margin-top: .18em;
+    white-space: pre-line;
+  }
+  .preorder-entry .preorder-time {
+    font-size: .85em;
+    color: #aaa;
+    margin-top: .14em;
+  }
+  #closePreOrdersBtn {
+    float: right;
+    border: none;
+    background: #f44336;
+    color: #fff;
+    padding: 0.35em 1em;
+    font-size: 1em;
+    border-radius: 7px;
+    cursor: pointer;
+    margin-top: -.7em;
+    margin-right: -.7em;
+  }
+  </style>
+</head>
+<body class="admin-bg">
+  <div class="admin-container">
+    <h1 id="schoolName" class="admin-title">Admin Dashboard</h1>
+    <button id="logoutBtn" class="admin-logout">Logout</button>
+    <button id="showPreOrdersBtn" style="float:right;margin-right:1em;margin-top:1em;">Show Pre-orders</button>
+    <button onclick="showInquiryModal()" style="float:right;margin-top:1em;margin-right:.5em;background:#376fd0;color:#fff;border:none;border-radius:7px;font-size:1em;padding:0.4em 1em;box-shadow:0 2px 8px #0002;cursor:pointer;">&#9993; Contact Support</button>
+
+    <div class="admin-section">
+      <h2>Menu Items</h2>
+      <form id="addMenuItemForm" autocomplete="off" enctype="multipart/form-data" class="admin-form">
+        <input id="menuItemName" class="admin-input" placeholder="Item Name" required />
+        <input id="menuItemDesc" class="admin-input" placeholder="Description" required />
+        <input id="menuItemCategory" class="admin-input" placeholder="Category (e.g. Drinks, Mains)" list="menuCategoryList" />
+        <datalist id="menuCategoryList"></datalist>
+        <input id="menuItemPrice" class="admin-input" placeholder="Price (e.g. 3.50)" type="number" step="0.01" min="0" required />
+        <input id="menuItemImage" type="file" class="admin-input" accept="image/*" />
+        <label style="margin-top:0.5em;">
+          <input type="checkbox" id="menuItemOnSale" />
+          Put this item on sale
+        </label>
+        <input id="menuItemSalePrice" class="admin-input" style="display:none;" placeholder="Sale Price (e.g. 2.50)" type="number" step="0.01" min="0" />
+        <input id="menuItemSaleStart" class="admin-input" style="display:none;" type="datetime-local" />
+        <input id="menuItemSaleEnd" class="admin-input" style="display:none;" type="datetime-local" />
+        <div id="saleFieldsLabel" style="display:none;font-size:0.9em;color:#376fd0;">
+          Set sale price and active period:
+        </div>
+        <button type="submit" class="admin-button">Add/Update Menu Item</button>
+        <div id="menuFormMsg" class="admin-msg"></div>
+      </form>
+      <ul id="menuList" class="admin-list"></ul>
+    </div>
+
+    <div class="admin-section">
+      <h2>Specials</h2>
+      <form id="addSpecialForm" autocomplete="off" enctype="multipart/form-data" class="admin-form">
+        <input id="specialName" class="admin-input" placeholder="Special Name" required />
+        <input id="specialDesc" class="admin-input" placeholder="Description" required />
+        <input id="specialCategory" class="admin-input" placeholder="Category (e.g. Drinks, Mains)" list="specialCategoryList" />
+        <datalist id="specialCategoryList"></datalist>
+        <input id="specialPrice" class="admin-input" placeholder="Price (optional)" type="number" step="0.01" min="0" />
+        <input id="specialImage" type="file" class="admin-input" accept="image/*" />
+        <label style="margin-top:0.5em;">
+          <input type="checkbox" id="specialOnSale" />
+          Put this special on sale
+        </label>
+        <input id="specialSalePrice" class="admin-input" style="display:none;" placeholder="Sale Price (e.g. 2.50)" type="number" step="0.01" min="0" />
+        <input id="specialSaleStart" class="admin-input" style="display:none;" type="datetime-local" />
+        <input id="specialSaleEnd" class="admin-input" style="display:none;" type="datetime-local" />
+        <div id="specialSaleFieldsLabel" style="display:none;font-size:0.9em;color:#376fd0;">
+          Set sale price and active period:
+        </div>
+        <button type="submit" class="admin-button">Add/Update Special</button>
+        <div id="specialFormMsg" class="admin-msg"></div>
+      </form>
+      <ul id="specialsList" class="admin-list"></ul>
+    </div>
+  </div>
+
+  <!-- Slide-in Pre-orders Panel -->
+  <div id="preOrdersOverlay"></div>
+  <div id="preOrdersPanel">
+    <button id="closePreOrdersBtn" title="Close">&times;</button>
+    <h2>Pre-orders</h2>
+    <div id="preOrdersList"></div>
+  </div>
+
+  <!-- Inquiry Modal -->
+  <div id="inquiryModal" style="display:none; position:fixed; z-index:1002; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.16); justify-content:center; align-items:center;">
+    <div style="background:#fff;max-width:350px;padding:1.5em 2em;border-radius:10px;box-shadow:0 2px 16px 3px #0001;position:relative;">
+      <button id="closeInquiryModal" style="position:absolute;top:0.5em;right:0.7em;font-size:1.4em;background:none;border:none;color:#888;cursor:pointer;">&times;</button>
+      <h3>Contact Support</h3>
+      <form id="inquiryForm">
+        <input name="to" type="email" value="support@schoolcanteen.com" style="width:100%;margin-bottom:0.7em;" readonly required />
+        <input name="subject" placeholder="Subject" required style="width:100%;margin-bottom:0.7em;" />
+        <textarea name="message" placeholder="Your message" required rows="4" style="width:100%;margin-bottom:0.7em;"></textarea>
+        <button type="submit" style="width:100%;background:#356fd0;color:#fff;border:none;border-radius:4px;font-size:1.1em;padding:0.5em 0;">Send</button>
+        <div id="inquirySuccessMsg" style="color:#378e36;font-weight:bold;margin-top:1em;display:none;text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+
+<script>
+let menu = {}, specials = {}, school = "";
+let menuObj = {};
+
+function loadMenu() {
+  fetch("/admin/api/menu")
+    .then(r => r.json())
+    .then(obj => {
+      if (!obj) return;
+      menuObj = obj;
+      document.getElementById("schoolName").textContent = obj.name + " — Admin Dashboard";
+      school = obj.school;
+      menu = obj.menu || {};
+      specials = obj.specials || {};
+      renderMenu();
+      renderSpecials();
+      renderCategoryList();
+      renderSpecialCategoryList();
+    });
+}
+
+function getImgSrc(image) {
+  if (!image) return "";
+  if (image.startsWith("http://") || image.startsWith("https://") || image.startsWith("/public/")) {
+    return image;
+  }
+  return `/public/${school}/${image}`;
+}
+
+function renderMenu() {
+  let html = "";
+  for (const [item, details] of Object.entries(menu)) {
+    const imgSrc = getImgSrc(details.image);
+    html += `<li>
+      <b>${item}</b>
+      <button onclick="deleteMenuItem('${item.replace(/'/g,"\\'")}')" class="admin-delete">Delete</button>
+      <button onclick="editMenuItem('${item.replace(/'/g,"\\'")}')" class="admin-edit">Edit</button>
+      <br>
+      ${imgSrc ? `<img src="${imgSrc}" class="admin-img" alt="${item}" onerror="this.style.display='none'"><br>` : ""}
+      <span>${details.description || ''}</span>
+      <br><b>Category:</b> ${details.category ? details.category : '<span style="color:#aaa">None</span>'}
+      <br><b>Price:</b> $${(details.price ?? '').toString()}
+      ${details.onSale && details.salePrice && isSaleActive(details) ? `<br><span style="color:#d00;font-weight:bold;">Sale: $${details.salePrice} <span style="font-size:.9em;">(from ${formatSaleDate(details.saleStart)} to ${formatSaleDate(details.saleEnd)})</span></span>` : ""}
+      </li>`;
+  }
+  document.getElementById("menuList").innerHTML = html;
+}
+
+function renderCategoryList() {
+  const categories = Array.from(new Set(Object.values(menu)
+    .map(i => i.category).filter(Boolean))).sort();
+  const datalist = document.getElementById("menuCategoryList");
+  datalist.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+}
+function renderSpecialCategoryList() {
+  const categories = Array.from(new Set(Object.values(specials)
+    .map(i => i.category).filter(Boolean))).sort();
+  const datalist = document.getElementById("specialCategoryList");
+  datalist.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+}
+
+function isSaleActive(details) {
+  if (!details.onSale || !details.salePrice) return false;
+  const now = Date.now();
+  const start = details.saleStart ? new Date(details.saleStart).getTime() : 0;
+  const end = details.saleEnd ? new Date(details.saleEnd).getTime() : Infinity;
+  return now >= start && now <= end;
+}
+function formatSaleDate(dt) {
+  if (!dt) return '';
+  const d = new Date(dt);
+  return d.toLocaleString();
+}
+
+window.deleteMenuItem = function(itemName) {
+  if (!confirm("Delete this menu item?")) return;
+  delete menu[itemName];
+  updateMenu();
+};
+
+window.editMenuItem = function(itemName) {
+  const details = menu[itemName];
+  if (!details) return;
+  document.getElementById("menuItemName").value = itemName;
+  document.getElementById("menuItemDesc").value = details.description || '';
+  document.getElementById("menuItemCategory").value = details.category || '';
+  document.getElementById("menuItemPrice").value = details.price || '';
+  document.getElementById("menuItemOnSale").checked = !!details.onSale;
+  const show = !!details.onSale;
+  document.getElementById("menuItemSalePrice").style.display =
+    document.getElementById("menuItemSaleStart").style.display =
+    document.getElementById("menuItemSaleEnd").style.display =
+    document.getElementById("saleFieldsLabel").style.display =
+    show ? "" : "none";
+  document.getElementById("menuItemSalePrice").value = details.salePrice || '';
+  document.getElementById("menuItemSaleStart").value = details.saleStart || '';
+  document.getElementById("menuItemSaleEnd").value = details.saleEnd || '';
+  document.getElementById("addMenuItemForm").scrollIntoView({ behavior: "smooth", block: "center" });
+};
+
+document.getElementById("menuItemOnSale").onchange = function() {
+  const show = this.checked;
+  document.getElementById("menuItemSalePrice").style.display =
+    document.getElementById("menuItemSaleStart").style.display =
+    document.getElementById("menuItemSaleEnd").style.display =
+    document.getElementById("saleFieldsLabel").style.display =
+    show ? "" : "none";
+};
+
+document.getElementById("addMenuItemForm").onsubmit = async function(e) {
+  e.preventDefault();
+  const name = document.getElementById("menuItemName").value.trim();
+  const description = document.getElementById("menuItemDesc").value.trim();
+  const category = document.getElementById("menuItemCategory").value.trim();
+  const price = parseFloat(document.getElementById("menuItemPrice").value);
+  const imgInput = document.getElementById("menuItemImage");
+  const onSale = document.getElementById("menuItemOnSale").checked;
+  const salePrice = onSale ? parseFloat(document.getElementById("menuItemSalePrice").value) : undefined;
+  const saleStart = onSale ? document.getElementById("menuItemSaleStart").value : undefined;
+  const saleEnd = onSale ? document.getElementById("menuItemSaleEnd").value : undefined;
+  let imagePath = menu[name]?.image || "";
+  if (imgInput.files.length) {
+    const form = new FormData();
+    form.append("image", imgInput.files[0]);
+    const res = await fetch("/admin/upload", { method: "POST", body: form });
+    const data = await res.json();
+    if (data.ok) imagePath = data.path;
+    else {
+      document.getElementById("menuFormMsg").style.color = "red";
+      document.getElementById("menuFormMsg").textContent = data.error || "Image upload failed";
+      return;
+    }
+  }
+  menu[name] = {
+    description,
+    image: imagePath,
+    category: category || undefined,
+    price: isNaN(price) ? undefined : price.toFixed(2),
+    onSale: !!onSale,
+    salePrice: onSale && !isNaN(salePrice) ? salePrice.toFixed(2) : undefined,
+    saleStart: onSale && saleStart ? saleStart : undefined,
+    saleEnd: onSale && saleEnd ? saleEnd : undefined
+  };
+  updateMenu();
+  document.getElementById("menuFormMsg").style.color = "green";
+  document.getElementById("menuFormMsg").textContent = "Menu updated!";
+  setTimeout(() => document.getElementById("menuFormMsg").textContent = "", 2000);
+  this.reset();
+  document.getElementById("menuItemSalePrice").style.display =
+    document.getElementById("menuItemSaleStart").style.display =
+    document.getElementById("menuItemSaleEnd").style.display =
+    document.getElementById("saleFieldsLabel").style.display = "none";
+  document.getElementById("menuItemOnSale").checked = false;
+  renderCategoryList();
+};
+
+function updateMenu() {
+  fetch("/admin/api/menu", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({menu, specials})
+  }).then(r => {
+    if (r.ok) loadMenu();
+  });
+}
+
+// Specials
+function renderSpecials() {
+  let html = "";
+  for (const [item, details] of Object.entries(specials)) {
+    const imgSrc = getImgSrc(details.image);
+    html += `<li>
+      <b>${item}</b>
+      <button onclick="deleteSpecial('${item.replace(/'/g,"\\'")}')" class="admin-delete">Delete</button>
+      <button onclick="editSpecial('${item.replace(/'/g,"\\'")}')" class="admin-edit">Edit</button>
+      <br>
+      ${imgSrc ? `<img src="${imgSrc}" class="admin-img" alt="${item}" onerror="this.style.display='none'"><br>` : ""}
+      <span>${details.description || ''}</span>
+      <br><b>Category:</b> ${details.category ? details.category : '<span style="color:#aaa">None</span>'}
+      ${details.price ? `<br><b>Price:</b> $${details.price}` : ""}
+      ${details.onSale && details.salePrice && isSaleActive(details) ? `<br><span style="color:#d00;font-weight:bold;">Sale: $${details.salePrice} <span style="font-size:.9em;">(from ${formatSaleDate(details.saleStart)} to ${formatSaleDate(details.saleEnd)})</span></span>` : ""}
+      </li>`;
+  }
+  document.getElementById("specialsList").innerHTML = html;
+}
+
+window.deleteSpecial = function(itemName) {
+  if (!confirm("Delete this special?")) return;
+  delete specials[itemName];
+  updateMenu();
+};
+
+window.editSpecial = function(itemName) {
+  const details = specials[itemName];
+  if (!details) return;
+  document.getElementById("specialName").value = itemName;
+  document.getElementById("specialDesc").value = details.description || '';
+  document.getElementById("specialCategory").value = details.category || '';
+  document.getElementById("specialPrice").value = details.price || '';
+  document.getElementById("specialOnSale").checked = !!details.onSale;
+  const show = !!details.onSale;
+  document.getElementById("specialSalePrice").style.display =
+    document.getElementById("specialSaleStart").style.display =
+    document.getElementById("specialSaleEnd").style.display =
+    document.getElementById("specialSaleFieldsLabel").style.display =
+    show ? "" : "none";
+  document.getElementById("specialSalePrice").value = details.salePrice || '';
+  document.getElementById("specialSaleStart").value = details.saleStart || '';
+  document.getElementById("specialSaleEnd").value = details.saleEnd || '';
+  document.getElementById("addSpecialForm").scrollIntoView({ behavior: "smooth", block: "center" });
+};
+
+document.getElementById("specialOnSale").onchange = function() {
+  const show = this.checked;
+  document.getElementById("specialSalePrice").style.display =
+    document.getElementById("specialSaleStart").style.display =
+    document.getElementById("specialSaleEnd").style.display =
+    document.getElementById("specialSaleFieldsLabel").style.display =
+    show ? "" : "none";
+};
+
+document.getElementById("addSpecialForm").onsubmit = async function(e) {
+  e.preventDefault();
+  const name = document.getElementById("specialName").value.trim();
+  const description = document.getElementById("specialDesc").value.trim();
+  const category = document.getElementById("specialCategory").value.trim();
+  const priceRaw = document.getElementById("specialPrice").value;
+  const price = priceRaw ? parseFloat(priceRaw).toFixed(2) : undefined;
+  const onSale = document.getElementById("specialOnSale").checked;
+  const salePrice = onSale ? parseFloat(document.getElementById("specialSalePrice").value) : undefined;
+  const saleStart = onSale ? document.getElementById("specialSaleStart").value : undefined;
+  const saleEnd = onSale ? document.getElementById("specialSaleEnd").value : undefined;
+  const imgInput = document.getElementById("specialImage");
+  let imagePath = specials[name]?.image || "";
+  if (imgInput.files.length) {
+    const form = new FormData();
+    form.append("image", imgInput.files[0]);
+    const res = await fetch("/admin/upload", { method: "POST", body: form });
+    const data = await res.json();
+    if (data.ok) imagePath = data.path;
+    else {
+      document.getElementById("specialFormMsg").style.color = "red";
+      document.getElementById("specialFormMsg").textContent = data.error || "Image upload failed";
+      return;
+    }
+  }
+  specials[name] = {
+    description,
+    image: imagePath,
+    category: category || undefined,
+    price: price ? price : undefined,
+    onSale: !!onSale,
+    salePrice: onSale && !isNaN(salePrice) ? salePrice.toFixed(2) : undefined,
+    saleStart: onSale && saleStart ? saleStart : undefined,
+    saleEnd: onSale && saleEnd ? saleEnd : undefined
+  };
+  updateMenu();
+  document.getElementById("specialFormMsg").style.color = "green";
+  document.getElementById("specialFormMsg").textContent = "Specials updated!";
+  setTimeout(() => document.getElementById("specialFormMsg").textContent = "", 2000);
+  this.reset();
+  document.getElementById("specialSalePrice").style.display =
+    document.getElementById("specialSaleStart").style.display =
+    document.getElementById("specialSaleEnd").style.display =
+    document.getElementById("specialSaleFieldsLabel").style.display = "none";
+  document.getElementById("specialOnSale").checked = false;
+  renderSpecialCategoryList();
+};
+
+document.getElementById("logoutBtn").onclick = async function() {
+  await fetch("/admin/logout", { method: "POST" });
+  window.location = "/admin/index.html";
+};
+
+// Pre-orders panel logic
+document.getElementById("showPreOrdersBtn").onclick = function() {
+  fetch("/admin/api/preorders")
+    .then(r => r.json())
+    .then(preorders => {
+      renderPreOrders(preorders || []);
+      document.getElementById("preOrdersPanel").classList.add("open");
+      document.getElementById("preOrdersOverlay").classList.add("open");
+    });
+};
+document.getElementById("closePreOrdersBtn").onclick =
+document.getElementById("preOrdersOverlay").onclick = function() {
+  document.getElementById("preOrdersPanel").classList.remove("open");
+  document.getElementById("preOrdersOverlay").classList.remove("open");
+};
+function renderPreOrders(list) {
+  if (!list.length) {
+    document.getElementById("preOrdersList").innerHTML = "<em>No pre-orders yet.</em>";
+    return;
+  }
+  document.getElementById("preOrdersList").innerHTML = list.map(po => `
+    <div class="preorder-entry">
+      <b>${po.item}</b> (${po.type === 'special' ? "Special" : "Menu"})<br>
+      <span class="preorder-meta">
+        Quantity: <b>${po.quantity}</b><br>
+        Name: <b>${po.name}</b>${po.note ? `<div class="preorder-note">Note: ${po.note}</div>` : ""}
+      </span>
+      <div class="preorder-time">${new Date(po.time).toLocaleString()}</div>
+    </div>
+  `).join('');
+}
+
+// Inquiry Modal logic
+function showInquiryModal() {
+  document.getElementById("inquiryForm").reset();
+  document.getElementById("inquirySuccessMsg").style.display = "none";
+  document.getElementById("inquiryModal").style.display = "flex";
+}
+document.getElementById("closeInquiryModal").onclick = () => {
+  document.getElementById("inquiryModal").style.display = "none";
+};
+window.onclick = function(evt) {
+  if(evt.target === document.getElementById("inquiryModal")) document.getElementById("inquiryModal").style.display = "none";
+};
+document.getElementById("inquiryForm").onsubmit = async function(e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+  const data = {
+    to: fd.get("to"),
+    subject: fd.get("subject"),
+    text: fd.get("message")
+  };
+  const res = await fetch("/admin/api/send-email", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  });
+  if(res.ok) {
+    document.getElementById("inquirySuccessMsg").textContent = "Email sent!";
+    document.getElementById("inquirySuccessMsg").style.display = "";
+    setTimeout(()=>{ document.getElementById("inquiryModal").style.display="none"; }, 1600);
+  } else {
+    document.getElementById("inquirySuccessMsg").textContent = "Failed to send. Please try again.";
+    document.getElementById("inquirySuccessMsg").style.display = "";
+  }
+};
+
+loadMenu();
+</script>
+</body>
+</html>

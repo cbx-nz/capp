@@ -1,0 +1,4 @@
+PS C:\Users\CtvGa\Desktop\cbx\capp> node hash.js okokokok1
+Hashed password: $2b$10$6VS9q4p4GpCUqWCkxWuv1uDuFLbQt3B.6xDPQWwThCPU07fds0LSG
+PS C:\Users\CtvGa\Desktop\cbx\capp> node hash.js newadministrator
+Hashed password: $2b$10$jEZVVmgMa8lCBxLldiJkQ.Hl2h5MGFQAPtfDKULdv0hxPBAY.Tc7q

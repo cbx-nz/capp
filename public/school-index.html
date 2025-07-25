@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta author="cb𝑥">
+  <title>School Home</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+  <link rel="icon" href="assets/favicon.ico" />
+</head>
+<body>
+  <main class="selector-center">
+    <h1 id="schoolName">School Home</h1>
+    <nav class="school-nav">
+      <a href="menu.html" class="nav-btn">Menu</a>
+      <a href="specials.html" class="nav-btn">Specials</a>
+    </nav>
+    <a href="index.html" class="back-link">Back to School Selector</a>
+    <button onclick="showInquiryModal()" class="inquiry-btn">&#9993; Contact Us</button>
+  </main>
+  <!-- Inquiry Modal -->
+  <div id="inquiryModal">
+    <div class="modal-content">
+      <button id="closeInquiryModal" aria-label="Close">&times;</button>
+      <h3>Contact Us</h3>
+      <form id="inquiryForm">
+        <input name="subject" placeholder="Subject" required style="width:100%;margin-bottom:0.7em;" />
+        <textarea name="message" placeholder="Your message" required rows="4" style="width:100%;margin-bottom:0.7em;"></textarea>
+        <button type="submit" style="width:100%;background:#356fd0;color:#fff;border:none;border-radius:4px;font-size:1.1em;padding:0.5em 0;">Send</button>
+        <div id="inquirySuccessMsg" style="color:#378e36;font-weight:bold;margin-top:1em;display:none;text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+  <script>
+    (() => {
+      var a='author',v=['cb','𝑥'].join(''),m=document.querySelector('meta['+a+'="'+v+'"]');
+      if(!m){
+        var w=document.createElement('div');
+        w.style.cssText='background:#ffe2e2;color:#b30000;padding:1em;text-align:center;font-weight:bold;font-size:1.15em;border-bottom:2px solid #ffaaaa;';
+        w.innerHTML='Warning: This page may not be running the official code. The required author meta tag is missing.';
+        document.body.insertBefore(w,document.body.firstChild);
+        return;
+      }
+      // Set school name from cookie and optionally menus.json if desired
+      function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+      }
+      const schoolCode = getCookie("selectedSchool");
+      if (!schoolCode) {
+        window.location.href = "/public/index.html";
+      } else {
+        fetch(`/public/${schoolCode}/api/menu`)
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data && data.name) document.getElementById("schoolName").textContent = `${data.name} Home`;
+          });
+      }
+      // Inquiry Modal logic
+      window.showInquiryModal = function() {
+        document.getElementById("inquiryForm").reset();
+        document.getElementById("inquirySuccessMsg").style.display = "none";
+        document.getElementById("inquiryModal").style.display = "flex";
+      };
+      document.getElementById("closeInquiryModal").onclick = () => {
+        document.getElementById("inquiryModal").style.display = "none";
+      };
+      window.onclick = function(evt) {
+        if(evt.target === document.getElementById("inquiryModal")) document.getElementById("inquiryModal").style.display = "none";
+      };
+      document.getElementById("inquiryForm").onsubmit = async function(e) {
+        e.preventDefault();
+        const fd = new FormData(this);
+        const data = {
+          subject: fd.get("subject"),
+          text: fd.get("message")
+        };
+        const res = await fetch("/public/api/send-email", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(data)
+        });
+        if(res.ok) {
+          document.getElementById("inquirySuccessMsg").textContent = "Email sent!";
+          document.getElementById("inquirySuccessMsg").style.display = "";
+          setTimeout(()=>{ document.getElementById("inquiryModal").style.display="none"; }, 1600);
+        } else {
+          document.getElementById("inquirySuccessMsg").textContent = "Failed to send. Please try again.";
+          document.getElementById("inquirySuccessMsg").style.display = "";
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

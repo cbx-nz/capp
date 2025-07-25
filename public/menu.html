@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta author="cb𝑥">
+  <title>School Menu</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+  <link rel="icon" href="assets/favicon.ico" />
+</head>
+<body>
+  <main class="selector-center">
+    <h1 id="schoolName">Loading...</h1>
+    <div id="menuGrid" class="menu-grid"></div>
+    <a href="school-index.html" class="back-link">Back to School Home</a>
+    <button onclick="showInquiryModal()" class="inquiry-btn">&#9993; Contact Us</button>
+  </main>
+  <!-- Inquiry Modal -->
+  <div id="inquiryModal">
+    <div class="modal-content">
+      <button id="closeInquiryModal" aria-label="Close">&times;</button>
+      <h3>Contact Us</h3>
+      <form id="inquiryForm">
+        <input name="subject" placeholder="Subject" required style="width:100%;margin-bottom:0.7em;" />
+        <textarea name="message" placeholder="Your message" required rows="4" style="width:100%;margin-bottom:0.7em;"></textarea>
+        <button type="submit" style="width:100%;background:#356fd0;color:#fff;border:none;border-radius:4px;font-size:1.1em;padding:0.5em 0;">Send</button>
+        <div id="inquirySuccessMsg" style="color:#378e36;font-weight:bold;margin-top:1em;display:none;text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+  <script>
+    (() => {
+      var a='author',v=['cb','𝑥'].join(''),m=document.querySelector('meta['+a+'="'+v+'"]');
+      if(!m){
+        var w=document.createElement('div');
+        w.style.cssText='background:#ffe2e2;color:#b30000;padding:1em;text-align:center;font-weight:bold;font-size:1.15em;border-bottom:2px solid #ffaaaa;';
+        w.innerHTML='Warning: This page may not be running the official code. The required author meta tag is missing.';
+        document.body.insertBefore(w,document.body.firstChild);
+        return;
+      }
+      function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+      }
+      function isSaleActive(item) {
+        if (!item.onSale || !item.salePrice) return false;
+        const now = Date.now();
+        const start = item.saleStart ? new Date(item.saleStart).getTime() : 0;
+        const end = item.saleEnd ? new Date(item.saleEnd).getTime() : Infinity;
+        return now >= start && now <= end;
+      }
+      function saleDates(item) {
+        if (!item.saleStart && !item.saleEnd) return '';
+        let s = '';
+        if (item.saleStart) s += 'from ' + new Date(item.saleStart).toLocaleString();
+        if (item.saleEnd) s += (s ? ' to ' : 'until ') + new Date(item.saleEnd).toLocaleString();
+        return s ? `<span class="sale-dates">${s}</span>` : '';
+      }
+      const schoolCode = getCookie("selectedSchool");
+      if (!schoolCode) {
+        window.location.href = "/public/index.html";
+      } else {
+        fetch(`/public/${schoolCode}/api/menu`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (!data) throw new Error();
+            document.getElementById("schoolName").textContent = data.name ? `${data.name} Menu` : "School Menu";
+            const menuObj = data.menu || {};
+            const menuKeys = Object.keys(menuObj);
+            const grid = document.getElementById("menuGrid");
+            if (menuKeys.length === 0) {
+              grid.innerHTML = `<div style="color:#888;text-align:center;">No menu items found.</div>`;
+              return;
+            }
+            // Group items by category
+            let byCategory = {};
+            menuKeys.forEach(itemName => {
+              const item = menuObj[itemName];
+              const cat = item.category || "Other";
+              if (!byCategory[cat]) byCategory[cat] = [];
+              byCategory[cat].push([itemName, item]);
+            });
+            grid.innerHTML = Object.keys(byCategory).map(cat =>
+              `<div style="width:100%;">
+                <div class="menu-category">${cat}</div>
+                ${byCategory[cat].map(([itemName, item]) => {
+                  const sale = isSaleActive(item);
+                  let priceHtml = '';
+                  if(item.price) {
+                    if(sale) {
+                      priceHtml = `
+                        <span class="old-price">$${item.price}</span>
+                        <span class="sale-price">$${item.salePrice}</span>
+                        <span class="sale-label">SALE!</span>
+                        ${saleDates(item)}
+                      `;
+                    } else {
+                      priceHtml = `<span>$${item.price}</span>`;
+                    }
+                  }
+                  return `
+                    <div class="menu-card">
+                      ${item.image ? `<img class="menu-img" src="${item.image}" alt="${itemName}">` : ''}
+                      <div class="menu-title">${itemName}</div>
+                      <div class="menu-desc">${item.description || ""}</div>
+                      <div class="menu-price">
+                        ${priceHtml}
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>`
+            ).join("");
+          })
+          .catch(() => {
+            document.getElementById("menuGrid").innerHTML = `<div style="color:#888;text-align:center;">Unable to load menu.</div>`;
+            document.getElementById("schoolName").textContent = "School not found";
+          });
+      }
+      // Inquiry Modal logic
+      window.showInquiryModal = function() {
+        document.getElementById("inquiryForm").reset();
+        document.getElementById("inquirySuccessMsg").style.display = "none";
+        document.getElementById("inquiryModal").style.display = "flex";
+      };
+      document.getElementById("closeInquiryModal").onclick = () => {
+        document.getElementById("inquiryModal").style.display = "none";
+      };
+      window.onclick = function(evt) {
+        if(evt.target === document.getElementById("inquiryModal")) document.getElementById("inquiryModal").style.display = "none";
+      };
+      document.getElementById("inquiryForm").onsubmit = async function(e) {
+        e.preventDefault();
+        const fd = new FormData(this);
+        const data = {
+          subject: fd.get("subject"),
+          text: fd.get("message")
+        };
+        const res = await fetch("/public/api/send-email", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(data)
+        });
+        if(res.ok) {
+          document.getElementById("inquirySuccessMsg").textContent = "Email sent!";
+          document.getElementById("inquirySuccessMsg").style.display = "";
+          setTimeout(()=>{ document.getElementById("inquiryModal").style.display="none"; }, 1600);
+        } else {
+          document.getElementById("inquirySuccessMsg").textContent = "Failed to send. Please try again.";
+          document.getElementById("inquirySuccessMsg").style.display = "";
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

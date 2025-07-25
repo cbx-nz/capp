@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta author="cb𝑥">
+  <title>School Specials</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+  <link rel="icon" href="assets/favicon.ico" />
+  <style>
+    #preorderModal {
+      display: none; position: fixed; z-index: 1002; left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.25);
+      justify-content: center; align-items: center;
+    }
+    #preorderModal .modal-content {
+      background: #fff;
+      padding: 1.5em 2em 1.5em 2em;
+      border-radius: 10px;
+      max-width: 350px;
+      min-width: 250px;
+      box-shadow: 0 2px 16px 3px #0001;
+      position: relative;
+    }
+    #preorderModal .close-btn {
+      position: absolute; top: 0.5em; right: 0.7em;
+      font-size: 1.4em; background: none; border: none; color: #888; cursor: pointer;
+    }
+    #preorderModal label { display:block; margin-top:0.7em; }
+    #preorderModal input, #preorderModal textarea {
+      width: 100%; margin-top: 0.2em; margin-bottom: 0.5em;
+      padding: 0.35em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #preorderModal button[type="submit"] {
+      width: 100%; margin-top: 0.8em;
+      background: #356fd0; color: #fff; border: none; border-radius: 4px;
+      font-size: 1.1em; padding: 0.5em 0; cursor: pointer;
+    }
+    #preorderModal .preorder-success {
+      color: #378e36;
+      font-weight: bold;
+      margin-top: 1em;
+      text-align: center;
+    }
+    .menu-category {
+      font-size: .98em;
+      color: #376fd0;
+      margin-bottom: 0.25em;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+    .inquiry-btn { margin-top:2em; background:#376fd0;color:#fff;border:none;border-radius:7px;font-size:1.1em;padding:0.7em 1.2em;box-shadow:0 2px 8px #0002;cursor:pointer; }
+    #inquiryModal { display:none; position:fixed; z-index:1003; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.16); justify-content:center; align-items:center; }
+    #inquiryModal .modal-content { background:#fff;max-width:350px;padding:1.5em 2em;border-radius:10px;box-shadow:0 2px 16px 3px #0001;position:relative; }
+    #closeInquiryModal { position:absolute;top:0.5em;right:0.7em;font-size:1.4em;background:none;border:none;color:#888;cursor:pointer; }
+  </style>
+</head>
+<body>
+  <main class="selector-center">
+    <h1 id="schoolName">Loading...</h1>
+    <div id="specialsGrid" class="menu-grid"></div>
+    <a href="school-index.html" class="back-link">Back to School Home</a>
+    <button onclick="showInquiryModal()" class="inquiry-btn">&#9993; Contact Us</button>
+  </main>
+  <div id="preorderModal">
+    <div class="modal-content">
+      <button class="close-btn" id="closePreorderModal" aria-label="Close">&times;</button>
+      <h3 id="preorderFor">Pre-order</h3>
+      <form id="preorderForm">
+        <label>Your name:
+          <input name="name" required maxlength="50" autocomplete="name" />
+        </label>
+        <label>Quantity:
+          <input name="quantity" type="number" min="1" value="1" required />
+        </label>
+        <label>Note (optional):
+          <textarea name="note" maxlength="200" rows="2" placeholder="e.g. for Wednesday, or any dietary requirements"></textarea>
+        </label>
+        <input type="hidden" name="item" />
+        <input type="hidden" name="type" value="special" />
+        <button type="submit">Place Pre-order</button>
+        <div class="preorder-success" id="preorderSuccessMsg" style="display:none;"></div>
+      </form>
+    </div>
+  </div>
+  <!-- Inquiry Modal -->
+  <div id="inquiryModal">
+    <div class="modal-content">
+      <button id="closeInquiryModal" aria-label="Close">&times;</button>
+      <h3>Contact Us</h3>
+      <form id="inquiryForm">
+        <input name="subject" placeholder="Subject" required style="width:100%;margin-bottom:0.7em;" />
+        <textarea name="message" placeholder="Your message" required rows="4" style="width:100%;margin-bottom:0.7em;"></textarea>
+        <button type="submit" style="width:100%;background:#356fd0;color:#fff;border:none;border-radius:4px;font-size:1.1em;padding:0.5em 0;">Send</button>
+        <div id="inquirySuccessMsg" style="color:#378e36;font-weight:bold;margin-top:1em;display:none;text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+  <script>
+    // Obfuscated and bundled logic for specials, pre-order modal, and inquiry modal
+    (() => {
+      var a='author',v=['cb','𝑥'].join(''),m=document.querySelector('meta['+a+'="'+v+'"]');
+      if(!m){
+        var w=document.createElement('div');
+        w.style.cssText='background:#ffe2e2;color:#b30000;padding:1em;text-align:center;font-weight:bold;font-size:1.15em;border-bottom:2px solid #ffaaaa;';
+        w.innerHTML='Warning: This page may not be running the official code. The required author meta tag is missing.';
+        document.body.insertBefore(w,document.body.firstChild);
+        return;
+      }
+      // Cookie util
+      const C = n => {
+        const m = document.cookie.match(new RegExp('(^| )' + n + '=([^;]+)'));
+        return m ? decodeURIComponent(m[2]) : null;
+      };
+      const schoolCode = C("selectedSchool");
+      if (!schoolCode) {
+        window.location.href = "/public/index.html";
+        return;
+      }
+      fetch(`/public/${schoolCode}/api/menu`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (!data) throw new Error();
+          document.getElementById("schoolName").textContent = data.name ? `${data.name} Specials` : "School Specials";
+          const specialsObj = data.specials || {};
+          let byCat = {};
+          Object.keys(specialsObj).forEach(itemName => {
+            const item = specialsObj[itemName];
+            const cat = item.category || "Other";
+            if (!byCat[cat]) byCat[cat] = [];
+            byCat[cat].push([itemName, item]);
+          });
+          const grid = document.getElementById("specialsGrid");
+          if (Object.keys(specialsObj).length === 0) {
+            grid.innerHTML = `<div style="color:#888;text-align:center;">No specials found.</div>`;
+            return;
+          }
+          grid.innerHTML = Object.keys(byCat).map(cat =>
+            `<div style="width:100%;">
+              <div class="menu-category">${cat}</div>
+              ${byCat[cat].map(([itemName, item]) => `
+                <div class="menu-card">
+                  ${item.image ? `<img class="menu-img" src="${item.image}" alt="${itemName}">` : ''}
+                  <div class="menu-title">${itemName}</div>
+                  <div class="menu-desc">${item.description || ""}</div>
+                  <div class="menu-price">${item.price ? `$${item.price}` : ""}</div>
+                  <button class="preorder-btn" data-name="${encodeURIComponent(itemName)}" data-type="special" style="margin-top:.7em;">Pre-order</button>
+                </div>
+              `).join("")}
+            </div>`
+          ).join("");
+          Array.from(document.querySelectorAll('.preorder-btn')).forEach(btn => {
+            btn.onclick = function() {
+              showPreorderModal(decodeURIComponent(btn.getAttribute("data-name")), btn.getAttribute("data-type"));
+            };
+          });
+        })
+        .catch(() => {
+          document.getElementById("specialsGrid").innerHTML = `<div style="color:#888;text-align:center;">Unable to load specials.</div>`;
+          document.getElementById("schoolName").textContent = "School not found";
+        });
+
+      // Pre-order modal logic
+      const modal = document.getElementById("preorderModal");
+      const closeBtn = document.getElementById("closePreorderModal");
+      window.showPreorderModal = function(item, type) {
+        document.getElementById("preorderForm").reset();
+        document.getElementById("preorderFor").textContent = `Pre-order: ${item}`;
+        document.querySelector("#preorderForm [name='item']").value = item;
+        document.querySelector("#preorderForm [name='type']").value = type;
+        document.getElementById("preorderSuccessMsg").style.display = "none";
+        modal.style.display = "flex";
+      };
+      closeBtn.onclick = () => { modal.style.display = "none"; };
+      window.onclick = function(evt) {
+        if(evt.target === modal) modal.style.display = "none";
+      };
+      document.getElementById("preorderForm").onsubmit = async function(e) {
+        e.preventDefault();
+        const fd = new FormData(this);
+        const data = {
+          item: fd.get("item"),
+          type: fd.get("type"),
+          name: fd.get("name").trim(),
+          quantity: parseInt(fd.get("quantity")),
+          note: fd.get("note"),
+        };
+        const res = await fetch("/public/api/preorder", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(data)
+        });
+        if(res.ok) {
+          document.getElementById("preorderSuccessMsg").textContent = "Your pre-order has been placed!";
+          document.getElementById("preorderSuccessMsg").style.display = "";
+          setTimeout(()=>{ modal.style.display="none"; }, 1600);
+        } else {
+          document.getElementById("preorderSuccessMsg").textContent = "Failed to place pre-order. Please try again.";
+          document.getElementById("preorderSuccessMsg").style.display = "";
+        }
+      };
+
+      // Inquiry Modal logic
+      window.showInquiryModal = function() {
+        document.getElementById("inquiryForm").reset();
+        document.getElementById("inquirySuccessMsg").style.display = "none";
+        document.getElementById("inquiryModal").style.display = "flex";
+      };
+      document.getElementById("closeInquiryModal").onclick = () => {
+        document.getElementById("inquiryModal").style.display = "none";
+      };
+      window.addEventListener('click', function(evt) {
+        if(evt.target === document.getElementById("inquiryModal"))
+          document.getElementById("inquiryModal").style.display = "none";
+      });
+      document.getElementById("inquiryForm").onsubmit = async function(e) {
+        e.preventDefault();
+        const fd = new FormData(this);
+        const data = {
+          subject: fd.get("subject"),
+          text: fd.get("message")
+        };
+        const res = await fetch("/public/api/send-email", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(data)
+        });
+        if(res.ok) {
+          document.getElementById("inquirySuccessMsg").textContent = "Email sent!";
+          document.getElementById("inquirySuccessMsg").style.display = "";
+          setTimeout(()=>{ document.getElementById("inquiryModal").style.display="none"; }, 1600);
+        } else {
+          document.getElementById("inquirySuccessMsg").textContent = "Failed to send. Please try again.";
+          document.getElementById("inquirySuccessMsg").style.display = "";
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

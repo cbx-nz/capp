@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>School Canteen: Choose School</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+  <link rel="icon" href="assets/favicon.ico" />
+</head>
+<body>
+  <main class="selector-center">
+    <h1>Choose Your School</h1>
+    <ul class="school-list" id="schoolList"></ul>
+    <button onclick="showInquiryModal()" class="inquiry-btn">&#9993; Contact Us</button>
+  </main>
+  <!-- Inquiry Modal -->
+  <div id="inquiryModal">
+    <div class="modal-content">
+      <button id="closeInquiryModal" aria-label="Close">&times;</button>
+      <h3>Contact Us</h3>
+      <form id="inquiryForm">
+        <input name="subject" placeholder="Subject" required style="width:100%;margin-bottom:0.7em;" />
+        <textarea name="message" placeholder="Your message" required rows="4" style="width:100%;margin-bottom:0.7em;"></textarea>
+        <button type="submit" style="width:100%;background:#356fd0;color:#fff;border:none;border-radius:4px;font-size:1.1em;padding:0.5em 0;">Send</button>
+        <div id="inquirySuccessMsg" style="color:#378e36;font-weight:bold;margin-top:1em;display:none;text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+  <script>
+    // School selection logic
+    fetch("/schools.json")
+      .then(r => r.json())
+      .then(data => {
+        const schools = Array.isArray(data) ? data : [];
+        const ul = document.getElementById("schoolList");
+        ul.innerHTML = schools.length
+          ? schools.map(s => `<li>
+              <div style="font-weight:bold;font-size:1.1em;">${s.name || s.school}</div>
+              <button class="school-btn" onclick="chooseSchool('${s.school}')">Select</button>
+            </li>`).join("")
+          : `<li style="color:#888;">No schools available.</li>`;
+      });
+    window.chooseSchool = function(code) {
+      document.cookie = "selectedSchool=" + encodeURIComponent(code) + ";path=/;max-age=86400";
+      window.location = `/public/${code}/index.html`;
+    };
+    // Inquiry Modal logic
+    window.showInquiryModal = function() {
+      document.getElementById("inquiryForm").reset();
+      document.getElementById("inquirySuccessMsg").style.display = "none";
+      document.getElementById("inquiryModal").style.display = "flex";
+    };
+    document.getElementById("closeInquiryModal").onclick = () => {
+      document.getElementById("inquiryModal").style.display = "none";
+    };
+    window.onclick = function(evt) {
+      if(evt.target === document.getElementById("inquiryModal")) document.getElementById("inquiryModal").style.display = "none";
+    };
+    document.getElementById("inquiryForm").onsubmit = async function(e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      const data = {
+        subject: fd.get("subject"),
+        text: fd.get("message")
+      };
+      const res = await fetch("/public/api/send-email", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      });
+      if(res.ok) {
+        document.getElementById("inquirySuccessMsg").textContent = "Email sent!";
+        document.getElementById("inquirySuccessMsg").style.display = "";
+        setTimeout(()=>{ document.getElementById("inquiryModal").style.display="none"; }, 1600);
+      } else {
+        document.getElementById("inquirySuccessMsg").textContent = "Failed to send. Please try again.";
+        document.getElementById("inquirySuccessMsg").style.display = "";
+      }
+    };
+  </script>
+</body>
+</html>
