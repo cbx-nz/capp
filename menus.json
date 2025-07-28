@@ -12,6 +12,14 @@
         "salePrice": "2.50"
       }
     },
-    "specials": {}
+    "specials": {
+      "Pear": {
+        "description": "taste like pear",
+        "image": "/public/hs/1753664551243-image_2025-07-28_130226019.png",
+        "category": "Mains",
+        "price": "4098857.00",
+        "onSale": false
+      }
+    }
   }
 ]

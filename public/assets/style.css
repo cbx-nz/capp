@@ -210,20 +210,279 @@ button.nav-btn:hover,
   letter-spacing: 0.01em;
 }
 
-.back-link {
-  display: block;
-  margin: 2.5em auto 0 auto;
-  font-size: 1.07em;
-  color: var(--primary);
-  text-decoration: underline;
+/* Enhanced School Landing Page Styles */
+.school-landing {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.5em 2em 2.5em 2em;
+  min-width: 340px;
+  max-width: 420px;
+  width: 100%;
+  margin: 2.5em auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.school-landing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+}
+
+.school-landing h1 {
   text-align: center;
-  transition: color 0.14s;
+  font-size: 2.2em;
+  margin-bottom: 0.8em;
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+.school-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  width: 100%;
+  margin: 1.5em 0 2em 0;
+  align-items: center;
+}
+
+.school-nav .nav-btn {
+  padding: 1em 2.5em;
+  font-size: 1.15em;
+  border-radius: 0.8em;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 3px 12px rgba(55,111,208,0.25);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: block;
+  text-align: center;
+  letter-spacing: 0.02em;
+  width: 100%;
+  max-width: 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+.school-nav .nav-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.school-nav .nav-btn:hover::before {
+  left: 100%;
+}
+
+.school-nav .nav-btn:hover {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+  box-shadow: 0 6px 20px rgba(55,111,208,0.35);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.school-nav .nav-btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(55,111,208,0.3);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 1.5em auto 0 auto;
+  font-size: 1.05em;
+  color: var(--text-muted);
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s ease;
   font-weight: 500;
   letter-spacing: 0.01em;
+  padding: 0.5em 1em;
+  border-radius: 0.5em;
+  border: 1px solid transparent;
 }
+
+.back-link::before {
+  content: '←';
+  font-size: 1.1em;
+  transition: transform 0.2s ease;
+}
+
 .back-link:hover {
+  color: var(--primary);
+  background: rgba(55,111,208,0.05);
+  border-color: rgba(55,111,208,0.1);
+}
+
+.back-link:hover::before {
+  transform: translateX(-2px);
+}
+
+.inquiry-btn {
+  margin-top: 1.5em;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: 0.8em;
+  font-size: 1.1em;
+  font-weight: 600;
+  padding: 0.8em 1.5em;
+  box-shadow: 0 2px 8px rgba(55,111,208,0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.inquiry-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(55,111,208,0.25);
+  transform: translateY(-1px);
+}
+
+.inquiry-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(55,111,208,0.2);
+}
+
+/* Enhanced Modal Styles */
+#inquiryModal {
+  display: none;
+  position: fixed;
+  z-index: 1002;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4);
+  justify-content: center;
+  align-items: center;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+#inquiryModal .modal-content {
+  background: #fff;
+  max-width: 400px;
+  width: 90%;
+  padding: 2em;
+  border-radius: 1.2em;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  position: relative;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+#inquiryModal .modal-content h3 {
+  margin: 0 0 1.5em 0;
+  color: var(--primary);
+  font-size: 1.4em;
+  font-weight: 600;
+  text-align: center;
+}
+
+#inquiryModal .modal-content input,
+#inquiryModal .modal-content textarea {
+  width: 100%;
+  padding: 0.8em;
+  margin-bottom: 1em;
+  border: 2px solid #e1e5e9;
+  border-radius: 0.6em;
+  font-size: 1em;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+#inquiryModal .modal-content input:focus,
+#inquiryModal .modal-content textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(55,111,208,0.1);
+}
+
+#inquiryModal .modal-content button[type="submit"] {
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 0.6em;
+  font-size: 1.1em;
+  font-weight: 600;
+  padding: 0.8em 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
+
+#inquiryModal .modal-content button[type="submit"]:hover {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+  box-shadow: 0 4px 16px rgba(55,111,208,0.25);
+  transform: translateY(-1px);
+}
+
+#closeInquiryModal {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  font-size: 1.5em;
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+#closeInquiryModal:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+#inquirySuccessMsg {
   color: var(--accent);
-  text-decoration: underline dotted;
+  font-weight: 600;
+  margin-top: 1em;
+  text-align: center;
+  padding: 0.5em;
+  border-radius: 0.4em;
+  background: rgba(79,195,107,0.1);
 }
 
 .menu-grid > div[style*="color:#888"] {
@@ -231,63 +490,6 @@ button.nav-btn:hover,
   text-align: center;
   font-size: 1.08em;
   padding: 1.4em 0;
-}
-
-.school-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2em;
-  width: 100%;
-  margin-top: 1.7em;
-  align-items: center;
-}
-
-.inquiry-btn, button.preorder-btn {
-  margin-top: 2em;
-  background: #376fd0;
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  font-size: 1.1em;
-  padding: 0.7em 1.2em;
-  box-shadow: 0 2px 8px #0002;
-  cursor: pointer;
-  transition: background .15s;
-}
-button.preorder-btn:hover, .inquiry-btn:hover {
-  background: #274b90;
-}
-
-#inquiryModal, #preorderModal {
-  display: none;
-  position: fixed;
-  z-index: 1002;
-  left: 0; top: 0; width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.16);
-  justify-content: center; align-items: center;
-}
-#inquiryModal .modal-content, #preorderModal .modal-content {
-  background: #fff;
-  max-width: 350px;
-  padding: 1.5em 2em;
-  border-radius: 10px;
-  box-shadow: 0 2px 16px 3px #0001;
-  position: relative;
-}
-#closeInquiryModal, #closePreorderModal {
-  position: absolute;
-  top: 0.5em; right: 0.7em;
-  font-size: 1.4em;
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-}
-#inquirySuccessMsg, #preorderSuccessMsg {
-  color: #378e36;
-  font-weight: bold;
-  margin-top: 1em;
-  text-align: center;
 }
 .school-list {
   list-style: none;
@@ -346,18 +548,62 @@ button.preorder-btn:hover, .inquiry-btn:hover {
     border-radius: 0.5em;
   }
   .school-nav {
-    gap: 0.7em;
-    margin-top: 1em;
+    gap: 0.8em;
+    margin: 1.2em 0 1.5em 0;
   }
-  .back-link, .inquiry-btn, button.preorder-btn {
+  
+  .school-nav .nav-btn {
+    padding: 0.9em 2em;
+    font-size: 1.1em;
+    max-width: 100%;
+  }
+  
+  .school-landing {
+    padding: 2em 1.5em;
+    margin: 1.5em auto;
+    min-width: 300px;
+    max-width: 95vw;
+  }
+  
+  .school-landing h1 {
+    font-size: 1.8em;
+    margin-bottom: 0.6em;
+  }
+  
+  .back-link {
     font-size: 1em;
     padding: 0.6em 1em;
-    border-radius: 0.5em;
+    margin: 1em auto 0 auto;
   }
-  #inquiryModal .modal-content, #preorderModal .modal-content {
-    padding: 1em 0.5em;
-    max-width: 99vw;
-    min-width: 0;
-    border-radius: 0.7em;
+  
+  .inquiry-btn {
+    font-size: 1em;
+    padding: 0.7em 1.3em;
+    margin-top: 1.2em;
+  }
+  
+  #inquiryModal .modal-content {
+    padding: 1.5em 1em;
+    max-width: 95vw;
+    width: 95%;
+    margin: 0 auto;
+    border-radius: 1em;
+  }
+  
+  #inquiryModal .modal-content h3 {
+    font-size: 1.2em;
+    margin-bottom: 1.2em;
+  }
+  
+  #inquiryModal .modal-content input,
+  #inquiryModal .modal-content textarea {
+    padding: 0.7em;
+    font-size: 0.95em;
+  }
+  
+  #closeInquiryModal {
+    top: 0.8em;
+    right: 0.8em;
+    font-size: 1.3em;
   }
 }
