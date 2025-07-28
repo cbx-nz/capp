@@ -12,6 +12,9 @@
   <main class="selector-center">
     <h1 id="schoolName">Loading...</h1>
     <div id="menuGrid" class="menu-grid"></div>
+    <button id="viewCartBtn" onclick="showPreorderModal()" class="preorder-btn" style="display:none;">
+      🛒 View Cart (<span id="cartCount">0</span>)
+    </button>
     <a href="/public/school-index.html" class="back-link">Back to School Home</a>
     <button onclick="showInquiryModal()" class="inquiry-btn">&#9993; Contact Us</button>
   </main>
@@ -19,13 +22,60 @@
   <div id="inquiryModal">
     <div class="modal-content">
       <button id="closeInquiryModal" aria-label="Close">&times;</button>
-      <h3>Contact Us</h3>
+      <h3>Technical Support</h3>
       <form id="inquiryForm">
         <input name="subject" placeholder="Subject" required style="width:100%;margin-bottom:0.7em;" />
         <textarea name="message" placeholder="Your message" required rows="4" style="width:100%;margin-bottom:0.7em;"></textarea>
         <button type="submit" style="width:100%;background:#356fd0;color:#fff;border:none;border-radius:4px;font-size:1.1em;padding:0.5em 0;">Send</button>
         <div id="inquirySuccessMsg" style="color:#378e36;font-weight:bold;margin-top:1em;display:none;text-align:center;"></div>
       </form>
+    </div>
+  </div>
+  
+  <!-- Preorder Modal -->
+  <div id="preorderModal">
+    <div class="modal-content">
+      <button id="closePreorderModal" aria-label="Close">&times;</button>
+      <h3>🛒 Your Order</h3>
+      
+      <div id="cartItems" class="cart-items">
+        <div class="empty-cart">Your cart is empty</div>
+      </div>
+      
+      <div id="cartTotal" class="cart-total" style="display:none;">
+        <span>Total: </span>
+        <span id="totalAmount">$0.00</span>
+      </div>
+      
+      <form id="customerForm" class="customer-form" style="display:none;">
+        <div class="form-group">
+          <label for="customerName">Full Name <span class="required">*</span></label>
+          <input type="text" id="customerName" name="customerName" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="customerPhone">Phone Number</label>
+          <input type="tel" id="customerPhone" name="customerPhone">
+        </div>
+        
+        <div class="form-group">
+          <label for="customerEmail">Email Address</label>
+          <input type="email" id="customerEmail" name="customerEmail">
+        </div>
+        
+        <div class="form-group">
+          <label for="orderNotes">Special Instructions</label>
+          <textarea id="orderNotes" name="orderNotes" rows="3" placeholder="Any special requests or dietary requirements..."></textarea>
+        </div>
+        
+        <button type="submit" class="submit-order-btn" id="submitOrderBtn">
+          Place Order
+        </button>
+      </form>
+      
+      <div id="orderSuccess" class="order-success" style="display:none;">
+        Order placed successfully! Order ID: <span id="orderId"></span>
+      </div>
     </div>
   </div>
   <script>
@@ -106,6 +156,9 @@
                       <div class="menu-price">
                         ${priceHtml}
                       </div>
+                      <button class="preorder-btn" onclick="addToCart('${itemName}', ${sale ? item.salePrice || item.price : item.price}, '${cat}')">
+                        Add to Cart
+                      </button>
                     </div>
                   `;
                 }).join("")}
@@ -117,6 +170,172 @@
             document.getElementById("schoolName").textContent = "School not found";
           });
       }
+      
+      // Shopping Cart functionality
+      let cart = [];
+      let currentSchoolCode = schoolCode;
+      
+      window.addToCart = function(itemName, price, category) {
+        const existingItem = cart.find(item => item.name === itemName);
+        if (existingItem) {
+          existingItem.quantity += 1;
+        } else {
+          cart.push({
+            name: itemName,
+            price: parseFloat(price) || 0,
+            category: category,
+            quantity: 1
+          });
+        }
+        updateCartUI();
+      };
+      
+      function updateCartUI() {
+        const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartBtn = document.getElementById('viewCartBtn');
+        document.getElementById('cartCount').textContent = cartCount;
+        
+        if (cartCount > 0) {
+          cartBtn.style.display = 'block';
+        } else {
+          cartBtn.style.display = 'none';
+        }
+      }
+      
+      window.showPreorderModal = function() {
+        updateCartDisplay();
+        document.getElementById('preorderModal').style.display = 'flex';
+      };
+      
+      function updateCartDisplay() {
+        const cartItems = document.getElementById('cartItems');
+        const cartTotal = document.getElementById('cartTotal');
+        const customerForm = document.getElementById('customerForm');
+        
+        if (cart.length === 0) {
+          cartItems.innerHTML = '<div class="empty-cart">Your cart is empty</div>';
+          cartTotal.style.display = 'none';
+          customerForm.style.display = 'none';
+          return;
+        }
+        
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        cartItems.innerHTML = cart.map((item, index) => `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${item.name}</div>
+              <div class="cart-item-details">$${item.price.toFixed(2)} each • ${item.category}</div>
+            </div>
+            <div class="cart-item-controls">
+              <button class="quantity-btn" onclick="changeQuantity(${index}, -1)">-</button>
+              <span class="quantity-display">${item.quantity}</span>
+              <button class="quantity-btn" onclick="changeQuantity(${index}, 1)">+</button>
+              <button class="remove-item" onclick="removeFromCart(${index})">Remove</button>
+            </div>
+          </div>
+        `).join('');
+        
+        document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
+        cartTotal.style.display = 'flex';
+        customerForm.style.display = 'block';
+      }
+      
+      window.changeQuantity = function(index, change) {
+        cart[index].quantity += change;
+        if (cart[index].quantity <= 0) {
+          cart.splice(index, 1);
+        }
+        updateCartUI();
+        updateCartDisplay();
+      };
+      
+      window.removeFromCart = function(index) {
+        cart.splice(index, 1);
+        updateCartUI();
+        updateCartDisplay();
+      };
+      
+      // Modal controls
+      document.getElementById('closePreorderModal').onclick = () => {
+        document.getElementById('preorderModal').style.display = 'none';
+      };
+      
+      // Form submission
+      document.getElementById('customerForm').onsubmit = async function(e) {
+        e.preventDefault();
+        
+        if (cart.length === 0) {
+          alert('Your cart is empty!');
+          return;
+        }
+        
+        const submitBtn = document.getElementById('submitOrderBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Placing Order...';
+        
+        const formData = new FormData(this);
+        const orderData = {
+          customerName: formData.get('customerName'),
+          customerPhone: formData.get('customerPhone'),
+          customerEmail: formData.get('customerEmail'),
+          school: currentSchoolCode,
+          items: cart,
+          notes: formData.get('orderNotes')
+        };
+        
+        try {
+          const res = await fetch('/public/api/preorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+          });
+          
+          const result = await res.json();
+          
+          if (res.ok && result.ok) {
+            // Clear cart and show success
+            cart = [];
+            updateCartUI();
+            
+            document.getElementById('cartItems').style.display = 'none';
+            document.getElementById('cartTotal').style.display = 'none';
+            document.getElementById('customerForm').style.display = 'none';
+            
+            const successDiv = document.getElementById('orderSuccess');
+            document.getElementById('orderId').textContent = result.orderId;
+            successDiv.style.display = 'block';
+            
+            // Auto-close modal after 3 seconds
+            setTimeout(() => {
+              document.getElementById('preorderModal').style.display = 'none';
+              // Reset modal for next use
+              setTimeout(() => {
+                successDiv.style.display = 'none';
+                document.getElementById('cartItems').style.display = 'block';
+                updateCartDisplay();
+              }, 500);
+            }, 3000);
+            
+          } else {
+            throw new Error(result.error || 'Order failed');
+          }
+        } catch (error) {
+          alert('Failed to place order: ' + error.message);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Place Order';
+        }
+      };
+      
+      // Close modal when clicking outside
+      window.onclick = function(evt) {
+        const inquiryModal = document.getElementById('inquiryModal');
+        const preorderModal = document.getElementById('preorderModal');
+        if (evt.target === inquiryModal) inquiryModal.style.display = 'none';
+        if (evt.target === preorderModal) preorderModal.style.display = 'none';
+      };
+      
       // Inquiry Modal logic
       window.showInquiryModal = function() {
         document.getElementById("inquiryForm").reset();
@@ -126,9 +345,7 @@
       document.getElementById("closeInquiryModal").onclick = () => {
         document.getElementById("inquiryModal").style.display = "none";
       };
-      window.onclick = function(evt) {
-        if(evt.target === document.getElementById("inquiryModal")) document.getElementById("inquiryModal").style.display = "none";
-      };
+      
       document.getElementById("inquiryForm").onsubmit = async function(e) {
         e.preventDefault();
         const fd = new FormData(this);

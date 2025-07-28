@@ -10,8 +10,8 @@
   /* Pre-orders slide-in panel styling */
   #preOrdersPanel {
     position: fixed;
-    top: 0; right: -480px;
-    width: 400px; height: 100vh;
+    top: 0; right: -600px;
+    width: 520px; height: 100vh;
     background: #fff;
     box-shadow: -3px 0 14px 1px #0002;
     z-index: 1001;
@@ -134,7 +134,7 @@
   <div id="inquiryModal" style="display:none; position:fixed; z-index:1002; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.16); justify-content:center; align-items:center;">
     <div style="background:#fff;max-width:350px;padding:1.5em 2em;border-radius:10px;box-shadow:0 2px 16px 3px #0001;position:relative;">
       <button id="closeInquiryModal" style="position:absolute;top:0.5em;right:0.7em;font-size:1.4em;background:none;border:none;color:#888;cursor:pointer;">&times;</button>
-      <h3>Contact Support</h3>
+      <h3>Technical Support</h3>
       <form id="inquiryForm">
         <input name="to" type="email" value="support@schoolcanteen.com" style="width:100%;margin-bottom:0.7em;" readonly required />
         <input name="subject" placeholder="Subject" required style="width:100%;margin-bottom:0.7em;" />
@@ -438,17 +438,104 @@ function renderPreOrders(list) {
     document.getElementById("preOrdersList").innerHTML = "<em>No pre-orders yet.</em>";
     return;
   }
-  document.getElementById("preOrdersList").innerHTML = list.map(po => `
-    <div class="preorder-entry">
-      <b>${po.item}</b> (${po.type === 'special' ? "Special" : "Menu"})<br>
-      <span class="preorder-meta">
-        Quantity: <b>${po.quantity}</b><br>
-        Name: <b>${po.name}</b>${po.note ? `<div class="preorder-note">Note: ${po.note}</div>` : ""}
-      </span>
-      <div class="preorder-time">${new Date(po.time).toLocaleString()}</div>
-    </div>
-  `).join('');
+  document.getElementById("preOrdersList").innerHTML = list.map(po => {
+    // Handle new format with multiple items
+    if (po.items && Array.isArray(po.items)) {
+      const itemsList = po.items.map(item => 
+        `${item.name} x${item.quantity} ($${(item.price * item.quantity).toFixed(2)})`
+      ).join('<br>');
+      
+      return `
+        <div class="preorder-entry">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5em;">
+            <strong style="color: #376fd0;">Order #${po.id}</strong>
+            <span style="background: ${po.status === 'completed' ? '#4fc36b' : po.status === 'preparing' ? '#f39c12' : '#376fd0'}; color: white; padding: 0.2em 0.6em; border-radius: 0.3em; font-size: 0.8em;">${po.status || 'pending'}</span>
+          </div>
+          
+          <div style="margin-bottom: 0.8em;">
+            <strong>Customer:</strong> ${po.customerName}<br>
+            ${po.customerPhone ? `<strong>Phone:</strong> ${po.customerPhone}<br>` : ''}
+            ${po.customerEmail ? `<strong>Email:</strong> ${po.customerEmail}<br>` : ''}
+            <strong>School:</strong> ${po.school}
+          </div>
+          
+          <div style="margin-bottom: 0.8em;">
+            <strong>Items:</strong><br>
+            <div style="margin-left: 1em; margin-top: 0.3em;">
+              ${itemsList}
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 0.8em;">
+            <strong>Total:</strong> ${po.totalItems} items - $${po.totalPrice.toFixed(2)}
+            ${po.notes ? `<div class="preorder-note">Notes: ${po.notes}</div>` : ""}
+          </div>
+          
+          <div style="display: flex; gap: 0.5em; margin-bottom: 0.5em;">
+            <button onclick="updateOrderStatus('${po.id}', 'preparing')" style="background: #f39c12; color: white; border: none; padding: 0.3em 0.8em; border-radius: 0.3em; cursor: pointer; font-size: 0.8em;">Mark Preparing</button>
+            <button onclick="updateOrderStatus('${po.id}', 'completed')" style="background: #4fc36b; color: white; border: none; padding: 0.3em 0.8em; border-radius: 0.3em; cursor: pointer; font-size: 0.8em;">Mark Completed</button>
+            <button onclick="deleteOrder('${po.id}')" style="background: #e74c3c; color: white; border: none; padding: 0.3em 0.8em; border-radius: 0.3em; cursor: pointer; font-size: 0.8em;">Delete</button>
+          </div>
+          
+          <div class="preorder-time">${new Date(po.createdAt || po.time).toLocaleString()}</div>
+        </div>
+      `;
+    } else {
+      // Handle old format for backward compatibility
+      return `
+        <div class="preorder-entry">
+          <b>${po.item}</b> (${po.type === 'special' ? "Special" : "Menu"})<br>
+          <span class="preorder-meta">
+            Quantity: <b>${po.quantity}</b><br>
+            Name: <b>${po.name}</b>${po.note ? `<div class="preorder-note">Note: ${po.note}</div>` : ""}
+          </span>
+          <div class="preorder-time">${new Date(po.time).toLocaleString()}</div>
+        </div>
+      `;
+    }
+  }).join('');
 }
+
+// Order management functions
+window.updateOrderStatus = async function(orderId, status) {
+  try {
+    const res = await fetch('/admin/api/preorders/update-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, status })
+    });
+    
+    if (res.ok) {
+      // Refresh the preorders list
+      document.getElementById("showPreOrdersBtn").click();
+    } else {
+      alert('Failed to update order status');
+    }
+  } catch (error) {
+    alert('Error updating order: ' + error.message);
+  }
+};
+
+window.deleteOrder = async function(orderId) {
+  if (!confirm('Are you sure you want to delete this order?')) return;
+  
+  try {
+    const res = await fetch('/admin/api/preorders/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId })
+    });
+    
+    if (res.ok) {
+      // Refresh the preorders list
+      document.getElementById("showPreOrdersBtn").click();
+    } else {
+      alert('Failed to delete order');
+    }
+  } catch (error) {
+    alert('Error deleting order: ' + error.message);
+  }
+};
 
 // Inquiry Modal logic
 function showInquiryModal() {

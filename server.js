@@ -99,20 +99,49 @@ app.get('/public/:school/api/menu', (req, res) => {
   });
 });
 
-// API endpoint: Accept pre-order
+// API endpoint: Accept pre-order (supports multiple items)
 app.post('/public/api/preorder', (req, res) => {
-  const { type, item, name, quantity, note } = req.body;
-  if (!type || !item || !name || !quantity || isNaN(quantity) || quantity <= 0) {
-    return res.status(400).json({ error: "Missing/invalid fields" });
+  const { customerName, customerPhone, customerEmail, items, school, notes } = req.body;
+  
+  // Validate required fields
+  if (!customerName || !items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "Missing required fields: customerName and items array" });
   }
+  
+  // Validate each item
+  for (const item of items) {
+    if (!item.name || !item.quantity || isNaN(item.quantity) || item.quantity <= 0) {
+      return res.status(400).json({ error: "Each item must have name and valid quantity" });
+    }
+  }
+  
   const preorders = loadDataJSON('preorders.json', []);
-  // Optionally you may want to also store the school field
-  preorders.push({
-    type, item, name, quantity: Number(quantity), note: note || "",
-    time: new Date().toISOString()
-  });
+  
+  // Create preorder record
+  const preorder = {
+    id: Date.now() + Math.random().toString(36).substr(2, 9), // Unique ID
+    customerName,
+    customerPhone: customerPhone || "",
+    customerEmail: customerEmail || "",
+    school: school || "unknown",
+    items: items.map(item => ({
+      name: item.name,
+      quantity: Number(item.quantity),
+      price: item.price || 0,
+      category: item.category || "Other",
+      notes: item.notes || ""
+    })),
+    totalItems: items.reduce((sum, item) => sum + Number(item.quantity), 0),
+    totalPrice: items.reduce((sum, item) => sum + (Number(item.quantity) * (item.price || 0)), 0),
+    notes: notes || "",
+    status: "pending",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  preorders.push(preorder);
   saveDataJSON('preorders.json', preorders);
-  res.json({ ok: true });
+  res.json({ ok: true, orderId: preorder.id });
 });
 
 // School selector (static index.html)
@@ -232,6 +261,48 @@ app.get('/admin/api/preorders', requireAdminAuth, (req, res) => {
 // Optional: Clear all pre-orders (dangerous, no auth check for school)
 app.post('/admin/api/preorders/clear', requireAdminAuth, (req, res) => {
   saveDataJSON('preorders.json', []);
+  res.json({ ok: true });
+});
+
+// Update order status
+app.post('/admin/api/preorders/update-status', requireAdminAuth, (req, res) => {
+  const { orderId, status } = req.body;
+  
+  if (!orderId || !status) {
+    return res.status(400).json({ error: 'Missing orderId or status' });
+  }
+  
+  const preorders = loadDataJSON('preorders.json', []);
+  const orderIndex = preorders.findIndex(order => order.id === orderId);
+  
+  if (orderIndex === -1) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  
+  preorders[orderIndex].status = status;
+  preorders[orderIndex].updatedAt = new Date().toISOString();
+  
+  saveDataJSON('preorders.json', preorders);
+  res.json({ ok: true });
+});
+
+// Delete order
+app.post('/admin/api/preorders/delete', requireAdminAuth, (req, res) => {
+  const { orderId } = req.body;
+  
+  if (!orderId) {
+    return res.status(400).json({ error: 'Missing orderId' });
+  }
+  
+  const preorders = loadDataJSON('preorders.json', []);
+  const orderIndex = preorders.findIndex(order => order.id === orderId);
+  
+  if (orderIndex === -1) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  
+  preorders.splice(orderIndex, 1);
+  saveDataJSON('preorders.json', preorders);
   res.json({ ok: true });
 });
 
